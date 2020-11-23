@@ -212,12 +212,17 @@ class NYUDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.datalist[idx][0])
-        msk_name = os.path.join(self.root_dir, self.datalist[idx][1])
+        msk_name = os.path.join(self.root_dir, self.datalist[idx][1][:-1])
+       # print(img_name)
+       # print(msk_name)
         #print(img_name)
         #print(msk_name)
         #img_name = img_name[:-1]
         #msk_name = msk_name[:-1]
-
+       # img_name = self.root_dir + self.datalist[idx][0]
+        #msk_name = self.root_dir + self.datalist[idx][1]
+        #img_name = img_name[:-1]
+        ##msk_name = msk_name[:-1]
         def read_image(x):
             img_arr = np.array(Image.open(x))
             if len(img_arr.shape) == 2:  # grayscale

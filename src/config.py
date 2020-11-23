@@ -1,11 +1,13 @@
 import numpy as np
 
 # DATASET PARAMETERS
-TRAIN_DIR = "/home/zhangjingtao/zjw/dataset/nyud_cropped/"
-#TRAIN_DIR = "E:\\Codes_python\\datasets\\nyud_cropped"
+#TRAIN_DIR = "/home/zhangjingtao/zjw/dataset/nyud_cropped/"
+TRAIN_DIR = "E:/Codes_python/datasets/nyud_cropped/"
 VAL_DIR = TRAIN_DIR
-TRAIN_LIST = ["./data/train.nyu"] * 3
-VAL_LIST = ["./data/val.nyu"] * 3
+#TRAIN_LIST = ["./data/train.nyu"] * 3
+#VAL_LIST = ["./data/val.nyu"] * 3
+TRAIN_LIST = ["E:/Codes_python/light-weight-refinenet/data/train.nyu"] * 3
+VAL_LIST = ["E:/Codes_python/light-weight-refinenet/data/val.nyu"] * 3
 SHORTER_SIDE = [350] * 3
 CROP_SIZE = [500] * 3
 NORMALISE_PARAMS = [
