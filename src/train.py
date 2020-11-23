@@ -26,7 +26,14 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+import pyximport
+import numpy as np
+#pyximport.install()
+pyximport.install(setup_args={"include_dirs":np.get_include()},
+                  reload_support=True)
 
+import sys
+sys.path.append("E:\Codes_python\light-weight-refinenet")
 # general libs
 import argparse
 import logging
@@ -37,7 +44,7 @@ import time
 
 # misc
 import cv2
-import numpy as np
+
 
 # pytorch libs
 import torch
@@ -48,6 +55,7 @@ from config import *
 from miou_utils import compute_iu, fast_cm
 from util import *
 
+from models.resnet import rf_lw50, rf_lw101, rf_lw152
 
 def get_arguments():
     """Parse all the arguments provided from the CLI.
@@ -257,7 +265,7 @@ def get_arguments():
 
 def create_segmenter(net, pretrained, num_classes):
     """Create Encoder; for now only ResNet [50,101,152]"""
-    from models.resnet import rf_lw50, rf_lw101, rf_lw152
+    #from models.resnet import rf_lw50, rf_lw101, rf_lw152
 
     if str(net) == "50":
         return rf_lw50(num_classes, imagenet=pretrained)

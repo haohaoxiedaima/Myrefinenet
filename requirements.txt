@@ -12,6 +12,5 @@ opencv-python==3.4.0.12
 Pillow>=6.2.0
 scikit-image==0.13.1
 six==1.11.0
-torch==0.4.1
 tqdm==4.11.2
 urllib3>=1.23

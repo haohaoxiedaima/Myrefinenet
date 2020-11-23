@@ -29,6 +29,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import torch.nn as nn
 import torch.nn.functional as F
+from tensorboardX import SummaryWriter
+import torch
+import logging
+
+
+import os, sys
+lib_path = os.path.abspath(os.path.join('..'))
+sys.path.append(lib_path)
 
 from utils.helpers import maybe_download
 from utils.layer_factory import conv1x1, conv3x3, CRPBlock
@@ -232,7 +240,7 @@ class ResNetLW(nn.Module):
         out = self.clf_conv(x1)
         return out
 
-
+ 
 def rf_lw50(num_classes, imagenet=False, pretrained=True, **kwargs):
     model = ResNetLW(Bottleneck, [3, 4, 6, 3], num_classes=num_classes, **kwargs)
     if imagenet:
@@ -279,3 +287,14 @@ def rf_lw152(num_classes, imagenet=False, pretrained=True, **kwargs):
             url = models_urls[bname]
             model.load_state_dict(maybe_download(key, url), strict=False)
     return model
+
+def main():
+    print("PI:")
+    model = rf_lw50(40, imagenet = True)
+    print(model)
+    dummy_input = torch.rand(1,3,220,220)
+    with SummaryWriter(comment='model') as w:
+        w.add_graph(model,(dummy_input,))
+
+if __name__ == "__main__":
+    main()

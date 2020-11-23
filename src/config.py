@@ -1,7 +1,8 @@
 import numpy as np
 
 # DATASET PARAMETERS
-TRAIN_DIR = "/datasets/nyud/"
+TRAIN_DIR = "/home/zhangjingtao/zjw/dataset/nyud_cropped/"
+#TRAIN_DIR = "E:\\Codes_python\\datasets\\nyud_cropped"
 VAL_DIR = TRAIN_DIR
 TRAIN_LIST = ["./data/train.nyu"] * 3
 VAL_LIST = ["./data/val.nyu"] * 3
@@ -13,7 +14,7 @@ NORMALISE_PARAMS = [
     np.array([0.229, 0.224, 0.225]).reshape((1, 1, 3)),
 ]  # STD
 BATCH_SIZE = [6] * 3
-NUM_WORKERS = 16
+NUM_WORKERS = 0
 NUM_CLASSES = [40] * 3
 LOW_SCALE = [0.5] * 3
 HIGH_SCALE = [2.0] * 3
