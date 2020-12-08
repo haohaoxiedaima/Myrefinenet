@@ -62,6 +62,27 @@ models_urls = {
 
 stages_suffixes = {0: "_conv", 1: "_conv_relu_varout_dimred"}
 
+class PPM(nn.Module):
+    def __init__(self, in_dim, reduction_dim, bins):
+        super(PPM, self).__init__()
+        self.features = []
+        for bin in bins:
+            self.features.append(nn.Sequential(
+                nn.AdaptiveAvgPool2d(bin),
+                nn.Conv2d(in_dim, reduction_dim, kernel_size=1, bias=False),
+                nn.BatchNorm2d(reduction_dim),
+                nn.ReLU(inplace=True)
+            ))
+        self.features = nn.ModuleList(self.features)
+
+    def forward(self, x):
+        x_size = x.size()
+        #out = [x]
+        out = []
+        for f in self.features:
+            out.append(F.interpolate(f(x), x_size[2:], mode='bilinear', align_corners=True))
+        return torch.cat(out, 1)
+
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -137,8 +158,15 @@ class Bottleneck(nn.Module):
 
 class ResNetLW(nn.Module):
     def __init__(self, block, layers, num_classes=21):
+
+
         self.inplanes = 64
         super(ResNetLW, self).__init__()
+
+        self.bins=(1, 2, 3, 6)
+        self.fea_dim = 256
+        self.ppm = PPM(self.fea_dim, int(self.fea_dim/len(self.bins)), self.bins)
+
         self.do = nn.Dropout(p=0.5)
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -213,26 +241,42 @@ class ResNetLW(nn.Module):
         x4 = self.relu(x4)
         x4 = self.mflow_conv_g1_pool(x4)
         x4 = self.mflow_conv_g1_b3_joint_varout_dimred(x4)
+        
+        x4 = self.ppm(x4)
+
         x4 = nn.Upsample(size=l3.size()[2:], mode="bilinear", align_corners=True)(x4)
+
+        
 
         x3 = self.p_ims1d2_outl2_dimred(l3)
         x3 = self.adapt_stage2_b2_joint_varout_dimred(x3)
+        
+        x3 = self.ppm(x3)
+        
         x3 = x3 + x4
         x3 = F.relu(x3)
         x3 = self.mflow_conv_g2_pool(x3)
         x3 = self.mflow_conv_g2_b3_joint_varout_dimred(x3)
         x3 = nn.Upsample(size=l2.size()[2:], mode="bilinear", align_corners=True)(x3)
+        
 
         x2 = self.p_ims1d2_outl3_dimred(l2)
         x2 = self.adapt_stage3_b2_joint_varout_dimred(x2)
+        
+        x2 = self.ppm(x2)
+
         x2 = x2 + x3
         x2 = F.relu(x2)
         x2 = self.mflow_conv_g3_pool(x2)
         x2 = self.mflow_conv_g3_b3_joint_varout_dimred(x2)
         x2 = nn.Upsample(size=l1.size()[2:], mode="bilinear", align_corners=True)(x2)
+        
 
         x1 = self.p_ims1d2_outl4_dimred(l1)
         x1 = self.adapt_stage4_b2_joint_varout_dimred(x1)
+        
+        x1 = self.ppm(x1)
+
         x1 = x1 + x2
         x1 = F.relu(x1)
         x1 = self.mflow_conv_g4_pool(x1)
@@ -292,9 +336,11 @@ def main():
     print("PI:")
     model = rf_lw50(40, imagenet = True)
     print(model)
-    dummy_input = torch.rand(1,3,220,220)
-    with SummaryWriter(comment='model') as w:
-        w.add_graph(model,(dummy_input,))
+    dummy_input = torch.rand(3,3,220,220)
+    out = model(dummy_input)
+    print(out.shape)
+    #with SummaryWriter(comment='model') as w:
+       # w.add_graph(model,(dummy_input,))
 
 if __name__ == "__main__":
     main()

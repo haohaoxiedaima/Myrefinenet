@@ -215,6 +215,7 @@ class NYUDataset(Dataset):
         msk_name = os.path.join(self.root_dir, self.datalist[idx][1][:-1])
        # print(img_name)
        # print(msk_name)
+    #  depth_name
         #print(img_name)
         #print(msk_name)
         #img_name = img_name[:-1]

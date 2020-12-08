@@ -33,11 +33,12 @@ pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
 
 import sys
-sys.path.append("E:\Codes_python\light-weight-refinenet")
+sys.path.append("/home/hawkeyenew3/zjw/code/refinenet/")
 # general libs
 import argparse
 import logging
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import random
 import re
 import time
@@ -56,6 +57,7 @@ from miou_utils import compute_iu, fast_cm
 from util import *
 
 from models.resnet import rf_lw50, rf_lw101, rf_lw152
+from collections import OrderedDict
 
 def get_arguments():
     """Parse all the arguments provided from the CLI.
