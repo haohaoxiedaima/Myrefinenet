@@ -33,12 +33,12 @@ pyximport.install(setup_args={"include_dirs":np.get_include()},
                   reload_support=True)
 
 import sys
-sys.path.append("/home/hawkeyenew3/zjw/code/refinenet/")
+sys.path.append("/home/hawkeyenew3/zjw/code/RGBDRefineNet/")
 # general libs
 import argparse
 import logging
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+#os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import random
 import re
 import time
@@ -393,6 +393,7 @@ def create_optimisers(
 
 def load_ckpt(ckpt_path, ckpt_dict):
     best_val = epoch_start = 0
+    print(args.ckpt_path)
     if os.path.exists(args.ckpt_path):
         ckpt = torch.load(ckpt_path)
         for (k, v) in ckpt_dict.items():

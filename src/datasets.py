@@ -37,6 +37,7 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
+import scipy.io as scio
 
 warnings.filterwarnings("ignore")
 
@@ -57,7 +58,7 @@ class Pad(object):
         self.msk_val = msk_val
 
     def __call__(self, sample):
-        image, mask = sample["image"], sample["mask"]
+        image, mask, depth = sample["image"], sample["mask"],sample["depth"]
         h, w = image.shape[:2]
         h_pad = int(np.clip(((self.size - h) + 1) // 2, 0, 1e6))
         w_pad = int(np.clip(((self.size - w) + 1) // 2, 0, 1e6))
@@ -75,7 +76,8 @@ class Pad(object):
             axis=2,
         )
         mask = np.pad(mask, pad, mode="constant", constant_values=self.msk_val)
-        return {"image": image, "mask": mask}
+        depth = np.pad(depth, pad, mode="constant", constant_values=0)
+        return {"image": image, "mask": mask,"depth": depth}
 
 
 class RandomCrop(object):
@@ -93,7 +95,7 @@ class RandomCrop(object):
             self.crop_size -= 1
 
     def __call__(self, sample):
-        image, mask = sample["image"], sample["mask"]
+        image, mask,depth = sample["image"], sample["mask"],sample["depth"]
         h, w = image.shape[:2]
         new_h = min(h, self.crop_size)
         new_w = min(w, self.crop_size)
@@ -101,7 +103,8 @@ class RandomCrop(object):
         left = np.random.randint(0, w - new_w + 1)
         image = image[top : top + new_h, left : left + new_w]
         mask = mask[top : top + new_h, left : left + new_w]
-        return {"image": image, "mask": mask}
+        depth = depth[top : top + new_h, left : left + new_w]
+        return {"image": image, "mask": mask,"depth":depth}
 
 
 class ResizeShorterScale(object):
@@ -114,7 +117,7 @@ class ResizeShorterScale(object):
         self.high_scale = high_scale
 
     def __call__(self, sample):
-        image, mask = sample["image"], sample["mask"]
+        image, mask, depth = sample["image"], sample["mask"], sample["depth"]
         min_side = min(image.shape[:2])
         scale = np.random.uniform(self.low_scale, self.high_scale)
         if min_side * scale < self.shorter_side:
@@ -125,7 +128,10 @@ class ResizeShorterScale(object):
         mask = cv2.resize(
             mask, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST
         )
-        return {"image": image, "mask": mask}
+        depth = cv2.resize(
+            depth, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST
+        )
+        return {"image": image, "mask": mask,"depth": depth}
 
 
 class RandomMirror(object):
@@ -135,12 +141,13 @@ class RandomMirror(object):
         pass
 
     def __call__(self, sample):
-        image, mask = sample["image"], sample["mask"]
+        image, mask, depth = sample["image"], sample["mask"],sample["depth"]
         do_mirror = np.random.randint(2)
         if do_mirror:
             image = cv2.flip(image, 1)
             mask = cv2.flip(mask, 1)
-        return {"image": image, "mask": mask}
+            depth = cv2.flip(depth,1)
+        return {"image": image, "mask": mask,"depth":depth}
 
 
 class Normalise(object):
@@ -165,6 +172,7 @@ class Normalise(object):
         return {
             "image": (self.scale * image - self.mean) / self.std,
             "mask": sample["mask"],
+            "depth": sample["depth"]
         }
 
 
@@ -172,12 +180,12 @@ class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, sample):
-        image, mask = sample["image"], sample["mask"]
+        image, mask,depth = sample["image"], sample["mask"],sample["depth"]
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C X H X W
         image = image.transpose((2, 0, 1))
-        return {"image": torch.from_numpy(image), "mask": torch.from_numpy(mask)}
+        return {"image": torch.from_numpy(image), "mask": torch.from_numpy(mask),"depth":torch.from_numpy(depth)}
 
 
 class NYUDataset(Dataset):
@@ -213,6 +221,11 @@ class NYUDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.datalist[idx][0])
         msk_name = os.path.join(self.root_dir, self.datalist[idx][1][:-1])
+
+        depth_name = img_name.replace("images","depth")
+        depth_name = depth_name.replace(".png",'.mat')
+
+        depth = scio.loadmat(depth_name)['depth']
        # print(img_name)
        # print(msk_name)
     #  depth_name
@@ -231,14 +244,23 @@ class NYUDataset(Dataset):
             return img_arr
 
         image = read_image(img_name)
+        print(image.shape)
         mask = np.array(Image.open(msk_name))
+        print(mask.shape)
         if img_name != msk_name:
             assert len(mask.shape) == 2, "Masks must be encoded without colourmap"
-        sample = {"image": image, "mask": mask}
+        sample = {"image": image, "mask": mask, "depth":depth}
         if self.stage == "train":
             if self.transform_trn:
                 sample = self.transform_trn(sample)
         elif self.stage == "val":
             if self.transform_val:
                 sample = self.transform_val(sample)
+        a = sample["image"]
+        b = sample["depth"]
+        b = b.unsqueeze(0)
+        a = torch.cat((a,b),dim=0)
+        sample["image"] = a
+        print(sample["mask"].shape)
         return sample
+

@@ -165,10 +165,10 @@ class ResNetLW(nn.Module):
 
         self.bins=(1, 2, 3, 6)
         self.fea_dim = 256
-        self.ppm = PPM(self.fea_dim, int(self.fea_dim/len(self.bins)), self.bins)
+      #  self.ppm = PPM(self.fea_dim, int(self.fea_dim/len(self.bins)), self.bins)
 
         self.do = nn.Dropout(p=0.5)
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.myconv1 = nn.Conv2d(4, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -224,7 +224,7 @@ class ResNetLW(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv1(x)
+        x = self.myconv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
@@ -242,7 +242,7 @@ class ResNetLW(nn.Module):
         x4 = self.mflow_conv_g1_pool(x4)
         x4 = self.mflow_conv_g1_b3_joint_varout_dimred(x4)
         
-        x4 = self.ppm(x4)
+    #    x4 = self.ppm(x4)
 
         x4 = nn.Upsample(size=l3.size()[2:], mode="bilinear", align_corners=True)(x4)
 
@@ -251,7 +251,7 @@ class ResNetLW(nn.Module):
         x3 = self.p_ims1d2_outl2_dimred(l3)
         x3 = self.adapt_stage2_b2_joint_varout_dimred(x3)
         
-        x3 = self.ppm(x3)
+    #    x3 = self.ppm(x3)
         
         x3 = x3 + x4
         x3 = F.relu(x3)
@@ -263,7 +263,7 @@ class ResNetLW(nn.Module):
         x2 = self.p_ims1d2_outl3_dimred(l2)
         x2 = self.adapt_stage3_b2_joint_varout_dimred(x2)
         
-        x2 = self.ppm(x2)
+    #    x2 = self.ppm(x2)
 
         x2 = x2 + x3
         x2 = F.relu(x2)
@@ -275,7 +275,7 @@ class ResNetLW(nn.Module):
         x1 = self.p_ims1d2_outl4_dimred(l1)
         x1 = self.adapt_stage4_b2_joint_varout_dimred(x1)
         
-        x1 = self.ppm(x1)
+      #  x1 = self.ppm(x1)
 
         x1 = x1 + x2
         x1 = F.relu(x1)
